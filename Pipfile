@@ -9,6 +9,8 @@ pylint = "*"
 [packages]
 tweepy = "*"
 requests = "*"
+parse = "*"
+schedule = "*"
 
 [requires]
 python_version = "3.7"

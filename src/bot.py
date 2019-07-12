@@ -4,6 +4,10 @@ from time import sleep
 from tweepy import OAuthHandler, API
 from requests import get
 
+from parse import parse
+
+import schedule
+
 # Picks bot parameters from environment
 CONSUMER_KEY = getenv("CONSUMER_KEY")
 CONSUMER_SECRET = getenv("CONSUMER_SECRET")
@@ -12,7 +16,10 @@ ACCESS_SECRET = getenv("ACCESS_SECRET")
 
 JSON_URL = getenv("JSON_URL")
 
-INTERVAL = int(getenv("FETCH_INTERVAL", default=15)) * 60
+FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
+
+# Tweet format
+TWEET_FORMAT = "{title} - {short_id_url} ({author}, {created_at}) {hashtags}"
 
 # Authenticates to Twitter
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -27,9 +34,13 @@ def get_newest_story () -> dict:
     # Gets the webpage
     request = get(JSON_URL)
     # Extrapolates JSON content
-    json = request.json()
+    json_result = request.json()
     # Gets first element
-    return json[0]
+    story = json_result[0]
+    # Modifies internal structure to facilitate parsing
+    story["author"] = story["submitter_user"]["username"]
+    # Returns the story
+    return story
 
 def is_newest (story_a: dict, story_b: dict) -> bool:
     """
@@ -41,46 +52,67 @@ def is_newest (story_a: dict, story_b: dict) -> bool:
     """
     # If there is no second story, first is newest.
     if (story_b == None): return True
-    # If titles are different, first story is newest.
-    return (story_a["title"] != story_b["title"])
+    # If created_at fields are different, first story is the newest.
+    # TODO: Find more efficient and elegant way of compare stories
+    return (story_a["created_at"] != story_b["created_at"])
 
-def get_tweet_string (story: dict) -> str:
+def build_tweet_string (story: dict) -> str:
     """
     Builds a string to be tweeted.
 
     :param story: Story to build tweet on.
     :return: String to be tweeted
     """
-    # Base string
-    base_string = "{title} - {url} ".format(title=story["title"], url=story["short_id_url"])
-    # Appends tags as hashtags
-    for tag in story["tags"]:
-        base_string += "#{tag} ".format(tag=tag)
+    # Transforms story's tags in hashtags
+    hashtag_list = list(map(lambda tag: "#{tag}".format(tag=tag), story["tags"]))
+    # Joins hashtags as list
+    hashtags = " ".join(hashtag_list)
+    # Builds the base string
+    base_string = TWEET_FORMAT.format(
+        title=story["title"],
+        author=story["author"],
+        created_at=story["created_at"],
+        short_id_url=story["short_id_url"],
+        hashtags=hashtags
+    )
     # Returns string
     return base_string
 
-if __name__ == "__main__":
+def get_last_posted_tweet (bot: API) -> dict:
+    """
+    Gets the last tweet posted and parses it.
+
+    :param bot: Twitter bot to fetch the tweet from
+    :return: Dictionary with "title", "short_id_url", "author" and "created_at" fields
+    """
+    # Gets its own Twitter ID
+    twitter_id = bot.me().id
+    # Gets its own last tweet
+    last_tweet = bot.user_timeline(id=twitter_id, tweet_mode="extended", count=1)[0]
+    # Parses tweet to retrieve required fields
+    result = parse(TWEET_FORMAT, last_tweet.full_text)
+    # Returns dictionary with the required fields, or None if the parsing has failed
+    return result.named if result else None
+    
+def main ():
     # Creates bot
     bot = API(auth)
-    print("Bot successifully created, starting.")
-    # When the bot starts, last posted story doesn't exists
-    last_posted_story = None
-    # Infinite loop of execution
+    print("Checking for new posts...")
+    # Fetches JSON for newest story
+    fetched_story = get_newest_story()
+    # Fetches Twitter for the last published story
+    last_posted_tweet = get_last_posted_tweet(bot)
+    # If the latest story is newest than the last posted, tweets it
+    if (is_newest(fetched_story, last_posted_tweet)):
+        # Builds tweet string
+        tweet = build_tweet_string(fetched_story)
+        # Posts tweet
+        bot.update_status(tweet)
+        print("Posted tweet: {tweet}".format(tweet=tweet))
+    # Else prints a sleepy message
+    else: print("Nothing new here, the bot goes back to sleep.")
+
+if __name__ == "__main__":
+    schedule.every(FETCH_INTERVAL).minutes.do(main)
     while (True):
-        print("Checking for new posts...")
-        # Fetches JSON for newest story
-        fetched_story = get_newest_story()
-        # If the latest story is newest than the last posted, tweets it
-        if (is_newest(fetched_story, last_posted_story)):
-            # Builds tweet string
-            tweet = get_tweet_string(fetched_story)
-            # Posts tweet
-            bot.update_status(tweet)
-            # Updates last posted story
-            last_posted_story = fetched_story
-            print("Posted tweet: {tweet}".format(tweet=tweet))
-        # Else prints a sleepy message
-        else:
-            print("Nothing new, the bot goes back to sleep,")
-        # Pauses for the given interval
-        sleep(INTERVAL)
+        schedule.run_pending()
