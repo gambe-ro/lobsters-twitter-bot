@@ -9,4 +9,4 @@ ADD requirements.txt /
 RUN pip install --requirement requirements.txt
 
 # Runs bot
-CMD ["python", "-u", "./bot.py"]
+CMD ["python", "-u", "./twitter.py"]

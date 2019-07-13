@@ -16,4 +16,4 @@ schedule = "*"
 python_version = "3.7"
 
 [scripts]
-dev = "python src/bot.py"
+dev = "python src/twitter.py"

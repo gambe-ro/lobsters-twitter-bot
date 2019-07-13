@@ -3,4 +3,4 @@ services:
   bot:
     build: .
     env_file:
-      - ./.env
+      - ./twitter.env
