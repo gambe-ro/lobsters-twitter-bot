@@ -51,10 +51,11 @@ def is_newest (story_a: dict, story_b: dict) -> bool:
     :return: True if story_a is newest than story_b, False otherwise.
     """
     # If there is no second story, first is newest.
-    if (story_b == None): return True
+    if (story_b is None):
+        return True
     # If created_at fields are different, first story is the newest.
     # TODO: Find more efficient and elegant way of compare stories
-    return (story_a["created_at"] != story_b["created_at"])
+    return (story_a["created_at"] > story_b["created_at"])
 
 def build_tweet_string (story: dict) -> str:
     """
@@ -64,7 +65,7 @@ def build_tweet_string (story: dict) -> str:
     :return: String to be tweeted
     """
     # Transforms story's tags in hashtags
-    hashtag_list = list(map(lambda tag: "#{tag}".format(tag=tag), story["tags"]))
+    hashtag_list = list(map(lambda tag: f"#{tag}", story["tags"]))
     # Joins hashtags as list
     hashtags = " ".join(hashtag_list)
     # Builds the base string
@@ -78,9 +79,9 @@ def build_tweet_string (story: dict) -> str:
     # Returns string
     return base_string
 
-def get_last_posted_tweet (bot: API) -> dict:
+def get_latest_posted_tweet (bot: API) -> dict:
     """
-    Gets the last tweet posted and parses it.
+    Gets the latest tweet posted and parses it.
 
     :param bot: Twitter bot to fetch the tweet from
     :return: Dictionary with "title", "short_id_url", "author" and "created_at" fields
@@ -88,9 +89,9 @@ def get_last_posted_tweet (bot: API) -> dict:
     # Gets its own Twitter ID
     twitter_id = bot.me().id
     # Gets its own last tweet
-    last_tweet = bot.user_timeline(id=twitter_id, tweet_mode="extended", count=1)[0]
+    latest_tweet = bot.user_timeline(id=twitter_id, tweet_mode="extended", count=1)[0]
     # Parses tweet to retrieve required fields
-    result = parse(TWEET_FORMAT, last_tweet.full_text)
+    result = parse(TWEET_FORMAT, latest_tweet.full_text)
     # Returns dictionary with the required fields, or None if the parsing has failed
     return result.named if result else None
     
@@ -101,7 +102,7 @@ def main ():
     # Fetches JSON for newest story
     fetched_story = get_newest_story()
     # Fetches Twitter for the last published story
-    last_posted_tweet = get_last_posted_tweet(bot)
+    last_posted_tweet = get_latest_posted_tweet(bot)
     # If the latest story is newest than the last posted, tweets it
     if (is_newest(fetched_story, last_posted_tweet)):
         # Builds tweet string
