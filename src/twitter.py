@@ -9,6 +9,9 @@ import schedule
 
 from story import Story, get_new_stories
 
+# Maximum length
+MAX_TWEET_LENGTH = 280
+
 # Picks bot parameters from environment
 CONSUMER_KEY = getenv("CONSUMER_KEY")
 CONSUMER_SECRET = getenv("CONSUMER_SECRET")
@@ -23,6 +26,23 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
+
+def resize_tweet (string: str) -> str:
+    """
+    If string is bigger than the maximum tweet size, eliminates words to resize it.
+
+    :param string: String to be prepared as a tweet.
+    :return: String at least as long as the maximum tweet length.
+    """
+    # If tweet is shorter than limit, no need to resize
+    if (len(string) <= MAX_TWEET_LENGTH):
+        return string
+    # Searches for the first space to terminate string
+    i = MAX_TWEET_LENGTH - 1
+    while ((string[i] != ' ') and (i >= 0)):
+        i = i - 1
+    # Returns terminated string
+    return string[:i]
 
 def get_last_posted_tweet(bot: API) -> Story:
     """
@@ -57,7 +77,7 @@ def main():
         print("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
-            tweet = story.__str__()
+            tweet = resize_tweet(story.__str__())
             bot.update_status(tweet)
             print(f"Tweeted: {tweet}")
 
