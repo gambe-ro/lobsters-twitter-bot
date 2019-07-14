@@ -58,7 +58,6 @@ def main ():
             print(f"Tweeted: {tweet}")
 
 if __name__ == "__main__":
-    #schedule.every(FETCH_INTERVAL).minutes.do(main)
-    #while (True):
-    #    schedule.run_pending()
-    main()
+    schedule.every(FETCH_INTERVAL).minutes.do(main)
+    while (True):
+        schedule.run_pending()
