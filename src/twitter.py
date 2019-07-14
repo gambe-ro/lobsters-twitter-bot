@@ -23,7 +23,8 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
-def get_last_posted_tweet (bot: API) -> Story:
+
+def get_last_posted_tweet(bot: API) -> Story:
     """
     Gets the last tweet posted and parses it.
 
@@ -33,12 +34,14 @@ def get_last_posted_tweet (bot: API) -> Story:
     # Gets its own Twitter ID
     twitter_id = bot.me().id
     # Gets its own last tweet
-    latest_tweet = bot.user_timeline(id=twitter_id, tweet_mode="extended", count=1)[0]
+    latest_tweet = bot.user_timeline(
+        id=twitter_id, tweet_mode="extended", count=1)[0]
     # Parses tweet to retrieve required fields
     story = Story.from_string(latest_tweet.full_text)
     return story
 
-def main ():
+
+def main():
     # Creates bot
     bot = API(auth)
     print("Checking for new posts...")
@@ -50,12 +53,14 @@ def main ():
     new_stories = get_new_stories(last_posted_tweet, json)
     # Tweets all the new stories
     print("[{time}]".format(time=datetime.now()), end=" ")
-    if (len(new_stories) == 0): print("Nothing new here, the bot is back to sleep.")
+    if (len(new_stories) == 0):
+        print("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
             tweet = story.__str__()
             bot.update_status(tweet)
             print(f"Tweeted: {tweet}")
+
 
 if __name__ == "__main__":
     schedule.every(FETCH_INTERVAL).minutes.do(main)

@@ -1,5 +1,6 @@
 from parse import parse
 
+
 class Story (object):
     """
     Represents a Story as needed for posting on social networks.
@@ -14,7 +15,7 @@ class Story (object):
 
     PATTERN = "{title} - {url} ({author}, {created_at}) {tags}"
 
-    def __init__ (self, title: str, url: str, author: str, created_at: str, tags: [str]):
+    def __init__(self, title: str, url: str, author: str, created_at: str, tags: [str]):
         """
         Constructor of the object.
 
@@ -31,17 +32,18 @@ class Story (object):
         self.tags = tags
 
     @classmethod
-    def from_string (self, string: str):
+    def from_string(cls, string: str):
         """
         Deserializes the string to create a Story object.
-        
+
         :param string: String with serialized fields as specified in PATTERN.
         :return: Story with the deserialized fields. If the string doesn't respects pattern, returns None.
         """
         # Parses string
-        result = parse(self.PATTERN, string)
+        result = parse(cls.PATTERN, string)
         # If the pattern is not recognized returns None
-        if (result is None): return None
+        if result is None:
+            raise ValueError("Invalid story pattern, cannot create a Story")
         # Creates object
         story = Story(
             title=result["title"],
@@ -52,25 +54,25 @@ class Story (object):
         )
         # Returns story
         return story
-    
+
     @classmethod
-    def from_json_dict (self, json: dict):
+    def from_json_dict(cls, story_data: dict):
         """
-        Uses fields of the JSON got from the webstie to build story.
-        
-        :param json: Dictionary representing the JSON got from the Lobste.rs website.
+        Uses fields of a dict to build story.
+
+        :param story_data: Dictionary representing the JSON got from the Lobste.rs website.
         :return: Story created from the dictionary fields.
         """
         story = Story(
-            title=json["title"],
-            url=json["short_id_url"],
-            author=json["submitter_user"]["username"],
-            created_at=json["created_at"],
-            tags=json["tags"]
+            title=story_data["title"],
+            url=story_data["short_id_url"],
+            author=story_data["submitter_user"]["username"],
+            created_at=story_data["created_at"],
+            tags=story_data["tags"]
         )
         return story
-        
-    def is_newer_of (self, story) -> bool:
+
+    def is_newer_of(self, story) -> bool:
         """
         :param story: Story to be compared.
         :return: True if self is newer of the other story, False otherwise.
@@ -78,7 +80,7 @@ class Story (object):
         # TODO: Find more efficient and elegant way to compare stories
         return (self.created_at > story.created_at)
 
-    def __str__ (self) -> str:
+    def __str__(self) -> str:
         """
         Builds a string to be tweeted.
 
@@ -86,7 +88,8 @@ class Story (object):
         :return: String to be tweeted
         """
         # Transforms story's tags in hashtags (only if they are not transformed already)
-        hashtag_list = list(map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, self.tags))
+        hashtag_list = list(
+            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, self.tags))
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
         # Builds the base string
@@ -100,28 +103,32 @@ class Story (object):
         # Returns string
         return base_string
 
-def get_new_stories (latest_story: Story, json: dict) -> [Story]:
+
+def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:
     """
     Gets the stories in the JSON dictionary published after story.
 
     :param latest_story: Latest story published as a tweet.
-    :param json: Dictionary with data from the Lobste.rs website.  
-    :return: List of stories published after story (maybe empty), or the latest published intem in JSON if story doesn't exists.
+    :param source_data: Dictionary with data from the Lobste.rs website.
+    :return: List of stories published after story (maybe empty), or the latest published item in JSON
+     if story doesn't exists.
     """
     # List of stories published
     stories = []
     # If latest story doesn't exists (this is the first tweet) gets only the latest story
-    if (latest_story is None):
-        story = Story.from_json_dict(json[0])
+    if latest_story is None:
+        story = Story.from_json_dict(source_data[0])
         stories.append(story)
     # Else gets the latest stories published
     else:
-        for story_json in json:
+        for story_json in source_data:
             # Creates story from json
             story = Story.from_json_dict(story_json)
             # Compares current story and last published story
-            if (story.is_newer_of(latest_story)): stories.append(story)
-            else: break
-    # Reverts list (from older to newer) and returns it
+            if story.is_newer_of(latest_story):
+                stories.append(story)
+            else:
+                break
+    # Reverses list (from older to newer) and returns it
     stories.reverse()
     return stories
