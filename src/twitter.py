@@ -54,23 +54,33 @@ def get_last_posted_tweet(bot: API) -> Story:
     # Gets its own Twitter ID
     twitter_id = bot.me().id
     # Gets its own last tweet
-    latest_tweet = bot.user_timeline(
-        id=twitter_id, tweet_mode="extended", count=1)[0]
+    last_tweet_list = bot.user_timeline(
+        id=twitter_id, tweet_mode="extended", count=1)
+    # If there are no valid tweets raises an exception
+    if (len(last_tweet_list) == 0):
+        raise ValueError("No valid tweet found")
+    # Else gets latest tweet
+    latest_tweet = last_tweet_list[0]
     # Parses tweet to retrieve required fields
     story = Story.from_string(latest_tweet.full_text)
     return story
-
 
 def main():
     # Creates bot
     bot = API(auth)
     print("Checking for new posts...")
-    # Fetches Twitter for the last published stories
-    last_posted_tweet = get_last_posted_tweet(bot)
     # Fetches website to get new stories in JSON
     response = get(JSON_URL)
     json = response.json()
-    new_stories = get_new_stories(last_posted_tweet, json)
+    # Fetches Twitter for the last published stories
+    last_posted_tweet = None
+    new_stories = []
+    try:
+        last_posted_tweet = get_last_posted_tweet(bot)
+        new_stories = get_new_stories(last_posted_tweet, json)
+    # If is not possible to retrieve last tweet gets only the latest story on the website
+    except ValueError:
+        new_stories.append(Story.from_json_dict(json[0]))
     # Tweets all the new stories
     print("[{time}]".format(time=datetime.now()), end=" ")
     if (len(new_stories) == 0):
@@ -83,6 +93,7 @@ def main():
 
 
 if __name__ == "__main__":
+    main()
     schedule.every(FETCH_INTERVAL).minutes.do(main)
     while (True):
         schedule.run_pending()
