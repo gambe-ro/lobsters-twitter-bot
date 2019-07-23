@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
-FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=900)) # in seconds
+FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15)) # in minutes
 CHAT_ID = getenv("CHAT_ID")
 
 # save last story published
@@ -50,6 +50,7 @@ def publish_news(context: CallbackContext):
 		for story in new_stories:
 			context.bot.send_message(chat_id=CHAT_ID, text=f"{story.title}\n{story.url}")
 
-job_minute = job_queue.run_repeating(publish_news, interval=FETCH_INTERVAL, first=0)
+job_minute = job_queue.run_repeating(publish_news, interval=FETCH_INTERVAL*60, first=0)
 
-updater.start_polling()
+if __name__ == "__main__":
+	updater.start_polling()
