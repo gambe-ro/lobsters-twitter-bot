@@ -115,20 +115,14 @@ def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:
     """
     # List of stories published
     stories = []
-    # If latest story doesn't exists (this is the first tweet) gets only the latest story
-    if latest_story is None:
-        story = Story.from_json_dict(source_data[0])
-        stories.append(story)
-    # Else gets the latest stories published
-    else:
-        for story_json in source_data:
-            # Creates story from json
-            story = Story.from_json_dict(story_json)
-            # Compares current story and last published story
-            if story.is_newer_of(latest_story):
-                stories.append(story)
-            else:
-                break
+    for story_json in source_data:
+        # Creates story from json
+        story = Story.from_json_dict(story_json)
+        # Compares current story and last published story
+        if story.is_newer_of(latest_story):
+            stories.append(story)
+        else:
+            break
     # Reverses list (from older to newer) and returns it
     stories.reverse()
     return stories
