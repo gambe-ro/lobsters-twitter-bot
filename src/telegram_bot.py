@@ -41,8 +41,14 @@ def publish_news(context: CallbackContext):
 	global last_story
 	response = get(JSON_URL)
 	json = response.json()
-	new_stories = get_new_stories(last_story, json)
-	
+
+	new_stories = []
+    try:
+        new_stories = get_new_stories(last_story, json)
+    # If is not possible to retrieve last tweet gets only the latest story on the website
+    except ValueError:
+        new_stories.append(Story.from_json_dict(json[0]))
+
 	if (len(new_stories) == 0):
 		logger.info("No new stories found since last check")
 	else:
