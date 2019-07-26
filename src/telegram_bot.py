@@ -16,9 +16,6 @@ JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15)) # in minutes
 CHAT_ID = getenv("CHAT_ID")
 
-# save last story published
-last_story = None
-
 def start(update, context):
 	"""
 	Function handling the start of a conversation. it just send a welcome message
@@ -29,7 +26,7 @@ def error(update, context):
 	logger.warning('Update "%s" caused error "%s"', update, error)
 
 def publish_news(context: CallbackContext):
-    global last_story
+    last_story = context.job.context
     response = get(JSON_URL)
     json = response.json()
 
@@ -45,7 +42,7 @@ def publish_news(context: CallbackContext):
     if (len(new_stories) == 0):
         logger.info("No new stories found since last check")
     else:
-        last_story = new_stories[-1]
+        context.job.context = new_stories[-1]
         for story in new_stories:
             context.bot.send_message(chat_id=CHAT_ID, text=f"{story.title}\n{story.url}")
 
