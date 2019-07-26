@@ -28,35 +28,40 @@ def start(update, context):
 def error(update, context):
 	logger.warning('Update "%s" caused error "%s"', update, error)
 
-# creating updater and getting dispatcher
-updater = Updater(token = TOKEN, use_context = True) 
-dispatcher = updater.dispatcher
-job_queue = updater.job_queue
-
-# adding handlers
-dispatcher.add_error_handler(error)
-dispatcher.add_handler(CommandHandler('start', start))
-
 def publish_news(context: CallbackContext):
-	global last_story
-	response = get(JSON_URL)
-	json = response.json()
+    global last_story
+    response = get(JSON_URL)
+    json = response.json()
 
-	new_stories = []
-    try:
-        new_stories = get_new_stories(last_story, json)
-    # If is not possible to retrieve last tweet gets only the latest story on the website
-    except ValueError:
+    new_stories = []
+    if (last_story is None):
         new_stories.append(Story.from_json_dict(json[0]))
+    else:
+        try:
+            new_stories = get_new_stories(last_story, json)
+        except ValueError:
+            new_stories.append(Story.from_json_dict(json[0]))
 
-	if (len(new_stories) == 0):
-		logger.info("No new stories found since last check")
-	else:
-		last_story = new_stories[-1]
-		for story in new_stories:
-			context.bot.send_message(chat_id=CHAT_ID, text=f"{story.title}\n{story.url}")
+    if (len(new_stories) == 0):
+        logger.info("No new stories found since last check")
+    else:
+        last_story = new_stories[-1]
+        for story in new_stories:
+            context.bot.send_message(chat_id=CHAT_ID, text=f"{story.title}\n{story.url}")
 
-job_minute = job_queue.run_repeating(publish_news, interval=FETCH_INTERVAL*60, first=0)
+def main():
+	# creating updater and getting dispatcher
+    updater = Updater(token = TOKEN, use_context = True) 
+    dispatcher = updater.dispatcher
+    job_queue = updater.job_queue
+
+	# adding handlers
+    dispatcher.add_error_handler(error)
+    dispatcher.add_handler(CommandHandler('start', start))
+
+    job_queue.run_repeating(publish_news, interval=FETCH_INTERVAL*60, first=0)
+
+    updater.start_polling()
 
 if __name__ == "__main__":
-	updater.start_polling()
+    main()
