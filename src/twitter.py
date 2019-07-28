@@ -1,6 +1,6 @@
 from os import getenv
 from time import sleep
-from datetime import datetime
+from datetime import datetime, timezone
 
 from tweepy import OAuthHandler, API
 from requests import get
@@ -61,8 +61,11 @@ def get_last_posted_tweet(bot: API) -> Story:
         raise ValueError("No valid tweet found")
     # Else gets latest tweet
     latest_tweet = last_tweet_list[0]
+    # Injects UTC timezone into timestamp
+    created_at = latest_tweet.created_at.replace(tzinfo=timezone.utc)
     # Parses tweet to retrieve required fields
-    story = Story.from_string(latest_tweet.full_text)
+    story = Story.from_string(latest_tweet.full_text, created_at)
+    # Returns story
     return story
 
 def main():

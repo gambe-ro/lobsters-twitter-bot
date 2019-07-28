@@ -1,5 +1,5 @@
 from parse import parse
-
+from datetime import date, datetime
 
 class Story (object):
     """
@@ -13,16 +13,16 @@ class Story (object):
     :param PATTERN: String representing the pattern to deserialize and serialize a story.  
     """
 
-    PATTERN = "{title} - {url} ({author}, {created_at}) {tags}"
+    PATTERN = "{title} - {url} ({author}) {tags}"
 
-    def __init__(self, title: str, url: str, author: str, created_at: str, tags: [str]):
+    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str]):
         """
         Constructor of the object.
 
         :param title: Title of the story.
         :param url: URL of the resource in the website (not original post's link).
         :param author: Username of the post's author.
-        :param created_at: String with creation time of the story
+        :param created_at: Creation time and date of the story
         :param tags: List of story tags
         """
         self.title = title
@@ -32,11 +32,12 @@ class Story (object):
         self.tags = tags
 
     @classmethod
-    def from_string(cls, string: str):
+    def from_string(cls, string: str, created_at: date):
         """
         Deserializes the string to create a Story object.
 
         :param string: String with serialized fields as specified in PATTERN.
+        :param created_at: Creation's timestamp, not provided in the PATTERN string.
         :return: Story with the deserialized fields. If the string doesn't respects pattern, returns None.
         """
         # Parses string
@@ -49,7 +50,7 @@ class Story (object):
             title=result["title"],
             url=result["url"],
             author=result["author"],
-            created_at=result["created_at"],
+            created_at=created_at,
             tags=result["tags"]
         )
         # Returns story
@@ -67,7 +68,7 @@ class Story (object):
             title=story_data["title"],
             url=story_data["short_id_url"],
             author=story_data["submitter_user"]["username"],
-            created_at=story_data["created_at"],
+            created_at=datetime.strptime(story_data["created_at"], "%Y-%m-%dT%H:%M:%S.%f%z"),
             tags=story_data["tags"]
         )
         return story
@@ -96,7 +97,6 @@ class Story (object):
         base_string = self.PATTERN.format(
             title=self.title,
             author=self.author,
-            created_at=self.created_at,
             url=self.url,
             tags=hashtags
         )
