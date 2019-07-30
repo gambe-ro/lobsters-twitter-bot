@@ -6,11 +6,18 @@ from tweepy import OAuthHandler, API
 from requests import get
 
 import schedule
+import logging
+from story import Story, get_new_stories, StoryPublishConfig
+from twitter.twitter_utils import calc_expected_status_length
+from functools import partial
 
-from story import Story, get_new_stories
+# enables and get logger
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+					 level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Maximum length
 MAX_TWEET_LENGTH = 280
+SHORT_URL_LENGTH = 23
 
 # Picks bot parameters from environment
 CONSUMER_KEY = getenv("CONSUMER_KEY")
@@ -26,23 +33,13 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
+class DefaultTwitterPublishConfig(StoryPublishConfig):
+    def __init__(self):
 
-def resize_tweet (string: str) -> str:
-    """
-    If string is bigger than the maximum tweet size, eliminates words to resize it.
-
-    :param string: String to be prepared as a tweet.
-    :return: String at least as long as the maximum tweet length.
-    """
-    # If tweet is shorter than limit, no need to resize
-    if (len(string) <= MAX_TWEET_LENGTH):
-        return string
-    # Searches for the first space to terminate string
-    i = MAX_TWEET_LENGTH - 1
-    while ((string[i] != ' ') and (i >= 0)):
-        i = i - 1
-    # Returns terminated string
-    return string[:i]
+        super(DefaultTwitterPublishConfig, self).__init__(
+            partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),
+                    max_length=MAX_TWEET_LENGTH,
+                    shortened_url_length=SHORT_URL_LENGTH)
 
 def get_last_posted_tweet(bot: API) -> Story:
     """
@@ -71,7 +68,7 @@ def get_last_posted_tweet(bot: API) -> Story:
 def main():
     # Creates bot
     bot = API(auth)
-    print("Checking for new posts...")
+    logger.debug("Checking for new posts...")
     # Fetches website to get new stories in JSON
     response = get(JSON_URL)
     json = response.json()
@@ -85,14 +82,14 @@ def main():
     except ValueError:
         new_stories.append(Story.from_json_dict(json[0]))
     # Tweets all the new stories
-    print("[{time}]".format(time=datetime.now()), end=" ")
+    logger.debug("[{time}]".format(time=datetime.now()), end=" ")
     if (len(new_stories) == 0):
-        print("Nothing new here, the bot is back to sleep.")
+        logger.debug("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
-            tweet = resize_tweet(story.__str__())
+            tweet = str(story)
             bot.update_status(tweet)
-            print(f"Tweeted: {tweet}")
+            logger.debug(f"Tweeted: {tweet}")
 
 
 if __name__ == "__main__":

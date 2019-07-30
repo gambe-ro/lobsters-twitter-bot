@@ -1,7 +1,17 @@
 from parse import parse
 from datetime import date, datetime
 
-class Story (object):
+class StoryPublishConfig(object):
+
+    def __init__(self, story_preview_length_func=None, max_length=None,
+                 shortened_url_length = None):
+
+        self.max_length = max_length
+        self.shortened_url_length= shortened_url_length
+        self.story_preview_length_func= story_preview_length_func or len
+
+
+class Story(object):
     """
     Represents a Story as needed for posting on social networks.
 
@@ -14,8 +24,10 @@ class Story (object):
     """
 
     PATTERN = "{title} - {url} ({author}) {tags}"
+    MIN_TAGS_NUM = 3
+    MIN_WORDS_NUM = 3
 
-    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str]):
+    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str], publish_config=None)
         """
         Constructor of the object.
 
@@ -30,6 +42,7 @@ class Story (object):
         self.author = author
         self.created_at = created_at
         self.tags = tags
+        self.publish_config = publish_config or StoryPublishConfig()
 
     @classmethod
     def from_string(cls, string: str, created_at: date):
@@ -79,29 +92,55 @@ class Story (object):
         :return: True if self is newer of the other story, False otherwise.
         """
         # TODO: Find more efficient and elegant way to compare stories
-        return (self.created_at > story.created_at)
+        return self.created_at > story.created_at
 
     def __str__(self) -> str:
         """
         Builds a string to be tweeted.
 
-        :param story: Story to build tweet on.  
+        :param story: Story to build tweet on.
         :return: String to be tweeted
         """
-        # Transforms story's tags in hashtags (only if they are not transformed already)
+
+
+        current_tags = self.tags
+        current_title_words= self.title.split(" ")
+        while True:
+            if self._estimate_story_length(current_tags, current_title_words) <= self.max_length:
+                return self._fill_template()
+
+            if current_tags > self.MIN_TAGS_NUM:
+                current_tags = current_tags[:-1]
+                continue
+
+            if current_title_words > self.MIN_WORDS_NUM:
+                current_title_words = current_title_words[:-1]
+                continue
+
+            raise ValueError("No Valid Tweet could be produced.")
+
+
+    def _estimate_story_length(self, tags, title_words):
+        string = self._fill_template(tags, title_words)
+        return self.story_preview_length_func(string)
+
+    def _fill_template(self, tags=None, title_words=None):
+
         hashtag_list = list(
-            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, self.tags))
+            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or self.tags))
+
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
+
         # Builds the base string
-        base_string = self.PATTERN.format(
-            title=self.title,
+        return self.PATTERN.format(
+            title=" ".join(title_words) if title_words else self.title,
             author=self.author,
             url=self.url,
             tags=hashtags
         )
-        # Returns string
-        return base_string
+
+
 
 
 def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:

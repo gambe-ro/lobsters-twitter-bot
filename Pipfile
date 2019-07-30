@@ -5,9 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+pytest = "*"
 
 [packages]
 tweepy = "*"
+python-twitter = "*"
 requests = "*"
 parse = "*"
 schedule = "*"
