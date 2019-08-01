@@ -1,15 +1,14 @@
-from os import getenv
-from time import sleep
+import logging
 from datetime import datetime, timezone
-
-from tweepy import OAuthHandler, API
-from requests import get
+from functools import partial
+from os import getenv
 
 import schedule
-import logging
-from story import Story, get_new_stories, StoryPublishConfig
+from requests import get
+from tweepy import OAuthHandler, API
 from twitter.twitter_utils import calc_expected_status_length
-from functools import partial
+
+from story import Story, get_new_stories, StoryPublishConfig
 
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -38,8 +37,7 @@ class DefaultTwitterPublishConfig(StoryPublishConfig):
 
         super(DefaultTwitterPublishConfig, self).__init__(
             partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),
-                    max_length=MAX_TWEET_LENGTH,
-                    shortened_url_length=SHORT_URL_LENGTH)
+            max_length=MAX_TWEET_LENGTH)
 
 def get_last_posted_tweet(bot: API) -> Story:
     """
@@ -61,7 +59,7 @@ def get_last_posted_tweet(bot: API) -> Story:
     # Injects UTC timezone into timestamp
     created_at = latest_tweet.created_at.replace(tzinfo=timezone.utc)
     # Parses tweet to retrieve required fields
-    story = Story.from_string(latest_tweet.full_text, created_at)
+    story = Story.from_string(latest_tweet.full_text, created_at, DefaultTwitterPublishConfig())
     # Returns story
     return story
 
@@ -80,7 +78,7 @@ def main():
         new_stories = get_new_stories(last_posted_tweet, json)
     # If is not possible to retrieve last tweet gets only the latest story on the website
     except ValueError:
-        new_stories.append(Story.from_json_dict(json[0]))
+        new_stories.append(Story.from_json_dict(json[0], DefaultTwitterPublishConfig()))
     # Tweets all the new stories
     logger.debug("[{time}]".format(time=datetime.now()), end=" ")
     if (len(new_stories) == 0):

@@ -1,9 +1,10 @@
-from os import getenv
-from telegram.ext import Updater, CommandHandler, CallbackContext
 import logging
-import schedule
+from os import getenv
+
 from requests import get
-from story import Story, get_new_stories
+from telegram.ext import Updater, CommandHandler, CallbackContext
+
+from story import Story, get_new_stories, StoryPublishConfig
 
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -16,6 +17,12 @@ JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
 
+
+class DefaultTelegramPublishConfig(StoryPublishConfig):
+    def __init__(self):
+        super(DefaultTelegramPublishConfig, self).__init__(
+            len,
+            max_length=500)
 
 def start(update, context):
     """
@@ -35,12 +42,12 @@ def publish_news(context: CallbackContext):
 
     new_stories = []
     if last_story is None:
-        new_stories.append(Story.from_json_dict(json[0]))
+        new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
     else:
         try:
             new_stories = get_new_stories(last_story, json)
         except ValueError:
-            new_stories.append(Story.from_json_dict(json[0]))
+            new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
 
     if len(new_stories) == 0:
         logger.info("No new stories found since last check")

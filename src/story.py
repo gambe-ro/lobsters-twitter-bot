@@ -1,5 +1,7 @@
-from parse import parse
 from datetime import date, datetime
+
+from parse import parse
+
 
 class StoryPublishConfig(object):
 
@@ -7,7 +9,6 @@ class StoryPublishConfig(object):
                  shortened_url_length = None):
 
         self.max_length = max_length
-        self.shortened_url_length= shortened_url_length
         self.story_preview_length_func= story_preview_length_func or len
 
 
@@ -19,15 +20,15 @@ class Story(object):
     :param url: URL of the resource in the website (not original post's link).  
     :param author: Username of the post's author.  
     :param created_at: String with creation time of the story.  
-    :param tags: List of story tags.  
-    :param PATTERN: String representing the pattern to deserialize and serialize a story.  
+    :param tags: List of story tags.    
     """
 
     PATTERN = "{title} - {url} ({author}) {tags}"
     MIN_TAGS_NUM = 3
     MIN_WORDS_NUM = 3
 
-    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str], publish_config=None)
+    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str],
+                 publish_config: StoryPublishConfig):
         """
         Constructor of the object.
 
@@ -45,7 +46,7 @@ class Story(object):
         self.publish_config = publish_config or StoryPublishConfig()
 
     @classmethod
-    def from_string(cls, string: str, created_at: date):
+    def from_string(cls, string: str, created_at: date, publish_config: StoryPublishConfig):
         """
         Deserializes the string to create a Story object.
 
@@ -64,13 +65,14 @@ class Story(object):
             url=result["url"],
             author=result["author"],
             created_at=created_at,
-            tags=result["tags"]
+            tags=result["tags"],
+            publish_config=publish_config
         )
         # Returns story
         return story
 
     @classmethod
-    def from_json_dict(cls, story_data: dict):
+    def from_json_dict(cls, story_data: dict, publish_config: StoryPublishConfig):
         """
         Uses fields of a dict to build story.
 
@@ -82,7 +84,8 @@ class Story(object):
             url=story_data["short_id_url"],
             author=story_data["submitter_user"]["username"],
             created_at=datetime.strptime(story_data["created_at"], "%Y-%m-%dT%H:%M:%S.%f%z"),
-            tags=story_data["tags"]
+            tags=story_data["tags"],
+            publish_config=publish_config
         )
         return story
 
@@ -98,7 +101,6 @@ class Story(object):
         """
         Builds a string to be tweeted.
 
-        :param story: Story to build tweet on.
         :return: String to be tweeted
         """
 
@@ -106,14 +108,14 @@ class Story(object):
         current_tags = self.tags
         current_title_words= self.title.split(" ")
         while True:
-            if self._estimate_story_length(current_tags, current_title_words) <= self.max_length:
-                return self._fill_template()
+            if self._estimate_story_length(current_tags, current_title_words) <= self.publish_config.max_length:
+                return self._fill_template(tags=current_tags, title_words=current_title_words)
 
-            if current_tags > self.MIN_TAGS_NUM:
+            if len(current_tags) > self.MIN_TAGS_NUM:
                 current_tags = current_tags[:-1]
                 continue
 
-            if current_title_words > self.MIN_WORDS_NUM:
+            if len(current_title_words) > self.MIN_WORDS_NUM:
                 current_title_words = current_title_words[:-1]
                 continue
 
@@ -122,7 +124,7 @@ class Story(object):
 
     def _estimate_story_length(self, tags, title_words):
         string = self._fill_template(tags, title_words)
-        return self.story_preview_length_func(string)
+        return self.publish_config.story_preview_length_func(string)
 
     def _fill_template(self, tags=None, title_words=None):
 
