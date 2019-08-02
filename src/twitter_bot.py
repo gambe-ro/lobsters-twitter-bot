@@ -66,7 +66,7 @@ def get_last_posted_tweet(bot: API) -> Story:
 def main():
     # Creates bot
     bot = API(auth)
-    logger.debug("Checking for new posts...")
+    logger.info("Checking for new posts...")
     # Fetches website to get new stories in JSON
     response = get(JSON_URL)
     json = response.json()
@@ -75,19 +75,18 @@ def main():
     new_stories = []
     try:
         last_posted_tweet = get_last_posted_tweet(bot)
-        new_stories = get_new_stories(last_posted_tweet, json)
+        new_stories = get_new_stories(last_posted_tweet, json, DefaultTwitterPublishConfig())
     # If is not possible to retrieve last tweet gets only the latest story on the website
     except ValueError:
         new_stories.append(Story.from_json_dict(json[0], DefaultTwitterPublishConfig()))
     # Tweets all the new stories
-    logger.debug("[{time}]".format(time=datetime.now()), end=" ")
     if (len(new_stories) == 0):
-        logger.debug("Nothing new here, the bot is back to sleep.")
+        logger.info("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
             tweet = str(story)
             bot.update_status(tweet)
-            logger.debug(f"Tweeted: {tweet}")
+            logger.info(f"Tweeted: {tweet}")
 
 
 if __name__ == "__main__":

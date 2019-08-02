@@ -145,7 +145,7 @@ class Story(object):
 
 
 
-def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:
+def get_new_stories(latest_story: Story, source_data: dict, publish_config: StoryPublishConfig) -> [Story]:
     """
     Gets the stories in the JSON dictionary published after story.
 
@@ -158,7 +158,7 @@ def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:
     stories = []
     for story_json in source_data:
         # Creates story from json
-        story = Story.from_json_dict(story_json)
+        story = Story.from_json_dict(story_json, publish_config)
         # Compares current story and last published story
         if story.is_newer_of(latest_story):
             stories.append(story)

@@ -45,7 +45,7 @@ def publish_news(context: CallbackContext):
         new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
     else:
         try:
-            new_stories = get_new_stories(last_story, json)
+            new_stories = get_new_stories(last_story, json, DefaultTelegramPublishConfig())
         except ValueError:
             new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
 
