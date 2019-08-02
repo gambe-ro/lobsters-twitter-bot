@@ -13,6 +13,7 @@ python-twitter = "*"
 requests = "*"
 parse = "*"
 schedule = "*"
+python-telegram-bot = "*"
 
 [requires]
 python_version = "3.7"

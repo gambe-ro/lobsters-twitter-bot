@@ -84,9 +84,13 @@ def main():
         logger.info("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
-            tweet = str(story)
-            bot.update_status(tweet)
-            logger.info(f"Tweeted: {tweet}")
+            tweet: str = None
+            try:
+                tweet = str(story)
+                bot.update_status(tweet)
+                logger.info(f"Tweeted: {tweet}")
+            except ValueError:
+                logger.critical("Unable to post tweet")
 
 
 if __name__ == "__main__":
