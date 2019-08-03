@@ -1,16 +1,22 @@
-from os import getenv
-from time import sleep
+import logging
 from datetime import datetime, timezone
-
-from tweepy import OAuthHandler, API
-from requests import get
+from functools import partial
+from os import getenv
 
 import schedule
+from requests import get
+from tweepy import OAuthHandler, API
+from twitter.twitter_utils import calc_expected_status_length
 
-from story import Story, get_new_stories
+from story import Story, get_new_stories, StoryPublishConfig
 
-# Maximum length
+# enables and get logger
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+					 level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 MAX_TWEET_LENGTH = 280
+SHORT_URL_LENGTH = 23
 
 # Picks bot parameters from environment
 CONSUMER_KEY = getenv("CONSUMER_KEY")
@@ -26,23 +32,12 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
+class DefaultTwitterPublishConfig(StoryPublishConfig):
+    def __init__(self):
 
-def resize_tweet (string: str) -> str:
-    """
-    If string is bigger than the maximum tweet size, eliminates words to resize it.
-
-    :param string: String to be prepared as a tweet.
-    :return: String at least as long as the maximum tweet length.
-    """
-    # If tweet is shorter than limit, no need to resize
-    if (len(string) <= MAX_TWEET_LENGTH):
-        return string
-    # Searches for the first space to terminate string
-    i = MAX_TWEET_LENGTH - 1
-    while ((string[i] != ' ') and (i >= 0)):
-        i = i - 1
-    # Returns terminated string
-    return string[:i]
+        super(DefaultTwitterPublishConfig, self).__init__(
+            partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),
+            max_length=MAX_TWEET_LENGTH)
 
 def get_last_posted_tweet(bot: API) -> Story:
     """
@@ -64,14 +59,14 @@ def get_last_posted_tweet(bot: API) -> Story:
     # Injects UTC timezone into timestamp
     created_at = latest_tweet.created_at.replace(tzinfo=timezone.utc)
     # Parses tweet to retrieve required fields
-    story = Story.from_string(latest_tweet.full_text, created_at)
+    story = Story.from_string(latest_tweet.full_text, created_at, DefaultTwitterPublishConfig())
     # Returns story
     return story
 
 def main():
     # Creates bot
     bot = API(auth)
-    print("Checking for new posts...")
+    logger.info("Checking for new posts...")
     # Fetches website to get new stories in JSON
     response = get(JSON_URL)
     json = response.json()
@@ -80,19 +75,22 @@ def main():
     new_stories = []
     try:
         last_posted_tweet = get_last_posted_tweet(bot)
-        new_stories = get_new_stories(last_posted_tweet, json)
+        new_stories = get_new_stories(last_posted_tweet, json, DefaultTwitterPublishConfig())
     # If is not possible to retrieve last tweet gets only the latest story on the website
     except ValueError:
-        new_stories.append(Story.from_json_dict(json[0]))
+        new_stories.append(Story.from_json_dict(json[0], DefaultTwitterPublishConfig()))
     # Tweets all the new stories
-    print("[{time}]".format(time=datetime.now()), end=" ")
     if (len(new_stories) == 0):
-        print("Nothing new here, the bot is back to sleep.")
+        logger.info("Nothing new here, the bot is back to sleep.")
     else:
         for story in new_stories:
-            tweet = resize_tweet(story.__str__())
-            bot.update_status(tweet)
-            print(f"Tweeted: {tweet}")
+            tweet: str = None
+            try:
+                tweet = str(story)
+                bot.update_status(tweet)
+                logger.info(f"Tweeted: {tweet}")
+            except ValueError:
+                logger.critical("Unable to post tweet")
 
 
 if __name__ == "__main__":

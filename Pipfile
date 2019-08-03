@@ -5,15 +5,18 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+pytest = "*"
 
 [packages]
 tweepy = "*"
+python-twitter = "*"
 requests = "*"
 parse = "*"
 schedule = "*"
+python-telegram-bot = "*"
 
 [requires]
 python_version = "3.7"
 
 [scripts]
-dev = "python src/twitter.py"
+dev = "python src/twitter_bot.py"
