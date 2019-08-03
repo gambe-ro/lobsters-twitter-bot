@@ -14,15 +14,10 @@ def test_valid(tags, title, author, expected_length):
               publish_config=DefaultTwitterPublishConfig())
     assert len(str(s)) == expected_length
 
-@pytest.mark.parametrize("author", ["failing_author" * 60])
-@pytest.mark.parametrize("tags, title, expected_length", [
-    [["tag_1", "tag_2"], "word", 55]
-])
-def test_failing (tags, title, author, expected_length):
-    s = Story(title, "https://someurl.com", author, created_at=None, tags=tags,
+def test_failing ():
+    author = "failing_author" * 50
+    s = Story("test", "https://someurl.com", author, created_at=None, tags=["tag_1", "tag_2"],
               publish_config=DefaultTwitterPublishConfig())
-    try:
-        tweet = str(s)
-    except ValueError:
-        return True
-    return False
+
+    with pytest.raises(ValueError):
+        str(s)
