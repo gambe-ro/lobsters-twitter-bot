@@ -9,4 +9,4 @@ RUN pip install --requirement requirements.txt
 COPY ./src /
 
 # Runs bot
-CMD ["python", "-u", "./twitter_bot.py"]
+ENTRYPOINT ["python", "-u", "./twitter_bot.py"]

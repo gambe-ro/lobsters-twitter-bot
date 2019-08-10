@@ -16,7 +16,7 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
 
 class TelegramStorage(Storage):
-    file_path = "telegram_bot_storage"
+    file_path = "/storage/telegram_bot_storage"
 
 class DefaultTelegramPublishConfig(StoryPublishConfig):
     def __init__(self):
