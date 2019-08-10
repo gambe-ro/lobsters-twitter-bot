@@ -8,5 +8,4 @@ RUN pip install --requirement requirements.txt
 # Copies Python sources
 COPY ./src /
 
-# Runs bot
-ENTRYPOINT ["python", "-u", "./twitter_bot.py"]
+# The entrypoint is defined in docker-compose.yml.

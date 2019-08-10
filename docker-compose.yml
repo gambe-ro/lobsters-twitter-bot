@@ -1,6 +1,28 @@
 version: '3'
 services:
-  bot:
+  twitter:
     build: .
-    env_file:
-      - ./twitter.env
+    environment:
+      - JSON_URL
+      - CONSUMER_KEY
+      - CONSUMER_SECRET
+      - ACCESS_TOKEN
+      - ACCESS_SECRET
+      - FETCH_INTERVAL
+    entrypoint:
+      - python
+      - -u
+      - ./twitter_bot.py
+  telegram:
+    build: .
+    volumes:
+      - ./telegram-state:/storage
+    environment:
+      - JSON_URL
+      - TELEGRAM_TOKEN
+      - CHAT_ID
+      - FETCH_INTERVAL
+    entrypoint:
+      - python
+      - -u
+      - ./telegram_bot.py

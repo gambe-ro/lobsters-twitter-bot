@@ -1,11 +1,12 @@
-# Lobste.rs Twitter Bot
+# Lobste.rs bots
 
-This bot has been created for [Gambe.ro](https://gambe.ro), the italian Lobsters fork, and tweets the newest story posted on every Lobste.rs-compatible website that exposes at least a JSON page.
+These bots have been created for [Gambe.ro](https://gambe.ro), the italian Lobsters fork. They fetch the newest stories from a Lobste.rs-compatible website and push them to various platforms (currently Twitter and Telegram).
 
-The first thing you need to run the bot it's to go to [dev.twitter.com](https://dev.twitter.com) and create an Application, that must be able to Read and Write tweets. Go to your app's page, in the "Keys and tokens" tab, then copy the parameters you see in `twitter.env`, as follows.
+## Configuring
+
+Edit the `.env` file like this:
 
 ```
-cat twitter.env << STOP
 # URL to fetch JSON from (es. https://lobste.rs/newest.json)
 JSON_URL=...
 # Twitter app parameters
@@ -13,10 +14,22 @@ CONSUMER_KEY=...
 CONSUMER_SECRET=...
 ACCESS_TOKEN=...
 ACCESS_SECRET=...
+# Telegram bot parameters
+TELEGRAM_TOKEN=...
+CHAT_ID=...
 # Interval (in minutes, optional, defaults to 15)
 FETCH_INTERVAL=...
-STOP
 ```
+
+### Twitter
+
+Go to [dev.twitter.com](https://dev.twitter.com) and create an Application that must be able to read and write tweets. Go to your app's page, in the "Keys and tokens" tab, then copy the parameters in `.env`.
+
+### Telegram
+
+Register a new bot with @BotFather, and get the chat ID for your group/channel with @get_id_bot.
+
+## Running
 
 To run the bot you need Docker and Docker Compose installed on your system. Once you have them, just:
 

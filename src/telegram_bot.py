@@ -27,9 +27,6 @@ def get_latest_story(bot) -> Story:
     raise NotImplementedError()
 
 def start(update, context):
-    """
-    Function handling the start of a conversation. it just send a welcome message
-    """
     update.message.reply_text("Ciao!")
 
 
