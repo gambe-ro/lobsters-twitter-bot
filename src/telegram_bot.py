@@ -1,10 +1,9 @@
 import logging
-from os import getenv
-
+from os import getenv, path
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from story import Story, get_new_stories, StoryPublishConfig
-
+from storage import Storage
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -16,6 +15,8 @@ JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
 
+class TelegramStorage(Storage):
+    file_path = "telegram_bot_storage"
 
 class DefaultTelegramPublishConfig(StoryPublishConfig):
     def __init__(self):
@@ -39,22 +40,20 @@ def error(update, context):
 def publish_news(context: CallbackContext):
     response = get(JSON_URL)
     json = response.json()
-    bot = context.bot
 
-    latest= get_latest_story(bot)
-    new_stories = []
-    try:
+    storage = TelegramStorage()
+    latest= storage.load()
+    if latest:
         new_stories = get_new_stories(latest, json,DefaultTelegramPublishConfig())
-    # If is not possible to retrieve last tweet gets only the latest story on the website
-    except ValueError:
-        new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
+    else:
+        new_stories = [Story.from_json_dict(json[0], DefaultTelegramPublishConfig())]
 
     if len(new_stories) == 0:
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            bot.send_message(chat_id=CHAT_ID, text=str(story))
-
+            context.bot.send_message(chat_id=CHAT_ID, text=str(story))
+        storage.save(new_stories[-1])
 
 def main():
     # creating updater and getting dispatcher
