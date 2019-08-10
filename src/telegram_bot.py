@@ -3,7 +3,6 @@ from os import getenv
 
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
-
 from story import Story, get_new_stories, StoryPublishConfig
 
 #  enables and get logger
@@ -22,7 +21,9 @@ class DefaultTelegramPublishConfig(StoryPublishConfig):
     def __init__(self):
         super(DefaultTelegramPublishConfig, self).__init__(
             len,
-            max_length=500)
+            max_length=700)
+def get_latest_story(bot) -> Story:
+    raise NotImplementedError()
 
 def start(update, context):
     """
@@ -36,25 +37,23 @@ def error(update, context):
 
 
 def publish_news(context: CallbackContext):
-    last_story = context.job.context
     response = get(JSON_URL)
     json = response.json()
+    bot = context.bot
 
+    latest= get_latest_story(bot)
     new_stories = []
-    if last_story is None:
+    try:
+        new_stories = get_new_stories(latest, json,DefaultTelegramPublishConfig())
+    # If is not possible to retrieve last tweet gets only the latest story on the website
+    except ValueError:
         new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
-    else:
-        try:
-            new_stories = get_new_stories(last_story, json, DefaultTelegramPublishConfig())
-        except ValueError:
-            new_stories.append(Story.from_json_dict(json[0], DefaultTelegramPublishConfig()))
 
     if len(new_stories) == 0:
         logger.info("No new stories found since last check")
     else:
-        context.job.context = new_stories[-1]
         for story in new_stories:
-            context.bot.send_message(chat_id=CHAT_ID, text=f"{story.title}\n{story.url}")
+            bot.send_message(chat_id=CHAT_ID, text=str(story))
 
 
 def main():
