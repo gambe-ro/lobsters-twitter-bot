@@ -21,3 +21,6 @@ python_version = "3.7"
 [scripts]
 dev = "python src/twitter_bot.py"
 telegram = "python src/telegram_bot.py"
+
+[pipenv]
+allow_prereleases = true
