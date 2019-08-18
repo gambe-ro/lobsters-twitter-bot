@@ -17,7 +17,7 @@ class Story(object):
     MIN_TAGS_NUM = 3
     MIN_WORDS_NUM = 3
 
-    def __init__(self, title: str, author: str, created_at: date, tags: [str], story_url: str, discussion_url: str):
+    def __init__(self, title: str, author: str, created_at: datetime, tags: [str], story_url: str, discussion_url: str):
         """
         Constructor of the object.
 
@@ -36,7 +36,7 @@ class Story(object):
         self.tags = tags
 
     @classmethod
-    def from_string(cls, pattern: str, string: str, created_at: date):
+    def from_string(cls, pattern: str, string: str, created_at: datetime):
         """
         Deserializes the string to create a Story object.
 
@@ -52,6 +52,7 @@ class Story(object):
         # Creates object
         story = Story(
             title=result["title"],
+            story_url=result["short_url"],
             discussion_url=result["url"],
             author=result["author"],
             created_at=created_at,
@@ -73,7 +74,7 @@ class Story(object):
             discussion_url=story_data["short_id_url"],
             story_url=story_data["url"],
             author=story_data["submitter_user"]["username"],
-            created_at=datetime.strptime(story_data["created_at"], "%Y-%m-%dT%H:%M:%S.%f%z"),
+            created_at=story_data["created_at"],
             tags=story_data["tags"]
         )
         return story

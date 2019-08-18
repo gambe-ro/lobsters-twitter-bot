@@ -60,8 +60,8 @@ def publish_news(context: CallbackContext):
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            text = TelegramStoryFormatter(story).format_string()
-            context.bot.send_message(chat_id=CHAT_ID, text=text)
+            text = TelegramStoryFormatter().format_string(story)
+            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="markdown")
         storage.save(new_stories[-1])
 
 def main():
