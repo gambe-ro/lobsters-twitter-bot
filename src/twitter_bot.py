@@ -32,10 +32,10 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
-TWITTER_PATTERN = "{{title}} - {{discussion_url}} ({{author}}) {{tags}}"
+TWITTER_PATTERN = "{title} - Link: {story_url} Commenti: {discussion_url} {tags}"
 
 class TwitterStoryFormatter(StoryFormatter):
-    def __init__(self, story: Story):
+    def __init__(self):
         super(TwitterStoryFormatter, self).__init__(
             pattern=TWITTER_PATTERN,
             story_preview_length_func=partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),

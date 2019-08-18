@@ -9,25 +9,26 @@ from storage import Storage
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+import os
 
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
-TELEGRAM_PATTERN = """**{{title}}** - {{author}}  
-{{tags}}
+TELEGRAM_PATTERN = """**{title}** - {author}  
+{tags}
 
-[link]({{story_url}}) | [discussione]({{discussion_url}})
+[link]({story_url}) | [discussione]({discussion_url})
 """
 class TelegramStorage(Storage):
     file_path = "/storage/telegram_bot_storage"
 
 class TelegramStoryFormatter(StoryFormatter):
-    def __init__(self, story: Story):
+    def __init__(self):
         
         super(TelegramStoryFormatter, self).__init__(
-            story=story,
+
             pattern=TELEGRAM_PATTERN,
             max_length=4096
         )

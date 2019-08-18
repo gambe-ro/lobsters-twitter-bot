@@ -17,7 +17,7 @@ class Story(object):
     MIN_TAGS_NUM = 3
     MIN_WORDS_NUM = 3
 
-    def __init__(self, title: str, author: str, created_at: date, tags: [str], story_url: str = None, discussion_url: str = None):
+    def __init__(self, title: str, author: str, created_at: date, tags: [str], story_url: str, discussion_url: str):
         """
         Constructor of the object.
 
@@ -88,28 +88,27 @@ class Story(object):
 
 class StoryFormatter():
 
-    def __init__(self, story: Story, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3, story_preview_length_func = None):
+    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3, story_preview_length_func = None):
 
         self.pattern = pattern
 
-        self.story = self.story
         
         self.min_tags_number = min_tags_number
         self.min_words_number = min_words_number
         self.max_length = max_length
         self.story_preview_length_func = story_preview_length_func or len
 
-    def format_string(self) -> str:
+    def format_string(self, story) -> str:
         """
         Formats string to be posted.
         """
 
-        current_tags = self.story.tags
-        current_title_words = self.story.title_words.split(" ")
+        current_tags = story.tags
+        current_title_words = story.title.split(" ")
         
         while True:
-            if self._estimate_story_length(current_tags, current_title_words) <= self.max_length:
-                return self._fill_template(tags=current_tags, title_words=current_title_words)
+            if self._estimate_story_length(story, current_tags, current_title_words) <= self.max_length:
+                return self._fill_template(story, tags=current_tags, title_words=current_title_words)
 
             if len(current_tags) > self.min_tags_number:
                 current_tags = current_tags[:-1]
@@ -121,23 +120,24 @@ class StoryFormatter():
 
             raise ValueError("No Valid Tweet could be produced.")
 
-    def _estimate_story_length(self, tags, title_words):
-        string = self._fill_template(tags, title_words)
+    def _estimate_story_length(self, story, tags, title_words):
+        string = self._fill_template(story, tags, title_words)
         return self.story_preview_length_func(string)
 
-    def _fill_template(self, tags=None, title_words=None):
+    def _fill_template(self, story, tags=None, title_words=None):
 
         hashtag_list = list(
-            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or self.story.tags))
+            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or story.tags))
 
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
 
         # Builds the base string
         return self.pattern.format(
-            title=" ".join(title_words) if title_words else self.story.title,
-            author=self.story.author,
-            url=self.story.discussion_url,
+            title=" ".join(title_words) if title_words else story.title,
+            author=story.author,
+            discussion_url=story.discussion_url,
+            story_url = story.story_url,
             tags=hashtags
         )
 
