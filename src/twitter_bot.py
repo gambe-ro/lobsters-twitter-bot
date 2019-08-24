@@ -9,7 +9,7 @@ from tweepy import OAuthHandler, API
 from twitter.twitter_utils import calc_expected_status_length
 
 from story import Story, get_new_stories, StoryFormatter
-
+from config import *
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 					 level=logging.INFO)
@@ -18,15 +18,6 @@ logger = logging.getLogger(__name__)
 MAX_TWEET_LENGTH = 280
 SHORT_URL_LENGTH = 23
 
-# Picks bot parameters from environment
-CONSUMER_KEY = getenv("CONSUMER_KEY")
-CONSUMER_SECRET = getenv("CONSUMER_SECRET")
-ACCESS_TOKEN = getenv("ACCESS_TOKEN")
-ACCESS_SECRET = getenv("ACCESS_SECRET")
-
-JSON_URL = getenv("JSON_URL")
-
-FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 
 # Authenticates to Twitter
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)

@@ -1,6 +1,5 @@
 import logging
-from datetime import date
-from os import getenv, path
+from config import *
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from story import Story, StoryFormatter, get_new_stories
@@ -11,11 +10,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 import os
 
-# fetching env variables
-TOKEN = getenv("TELEGRAM_TOKEN")
-JSON_URL = getenv("JSON_URL")
-FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
-CHAT_ID = getenv("CHAT_ID")
 TELEGRAM_PATTERN = """**{title}** - {author}  
 {tags}
 
