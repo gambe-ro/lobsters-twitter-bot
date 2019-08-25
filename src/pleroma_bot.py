@@ -10,25 +10,25 @@ import schedule
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
-SECRET_STORAGE="/storage/gamberobot.secret"
+SECRET_STORAGE="/storage/pleroma.secret"
 
-MASTODON_PATTERN = """**{title}** - {author}  
+PLEROMA_PATTERN = """**{title}** - {author}  
 {tags}
 
 [link]({story_url}) | [discussione]({discussion_url})
 """
-class MastodonStoryFormatter(StoryFormatter):
+class PleromaStoryFormatter(StoryFormatter):
     def __init__(self):
 
-        super(MastodonStoryFormatter, self).__init__(
+        super(PleromaStoryFormatter, self).__init__(
 
-            pattern=MASTODON_PATTERN,
+            pattern=PLEROMA_PATTERN,
             max_length=512
         )
 
 
-class MastodonStorage(Storage):
-    file_path = "/storage/mastodon_bot_storage"
+class PleromaStorage(Storage):
+    file_path = "/storage/pleroma_bot_storage"
 
 
 def login():
@@ -47,7 +47,7 @@ def main():
     response = get(JSON_URL)
     json = response.json()
 
-    storage = MastodonStorage()
+    storage = PleromaStorage()
     latest= storage.load()
     if latest:
         new_stories = get_new_stories(latest, json)
@@ -58,7 +58,7 @@ def main():
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            text = MastodonStoryFormatter().format_string(story)
+            text = PleromaStoryFormatter().format_string(story)
             pleroma.status_post(status=text,content_type="text/markdown")
 
         storage.save(new_stories[-1])
