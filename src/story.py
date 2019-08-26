@@ -1,5 +1,5 @@
 from datetime import date, datetime
-
+from dateutil.parser import parse as parse_date
 from parse import parse
 
 class Story(object):
@@ -52,9 +52,9 @@ class Story(object):
         # Creates object
         story = Story(
             title=result["title"],
-            story_url=result["short_url"],
-            discussion_url=result["url"],
-            author=result["author"],
+            story_url=result["story_url"],
+            discussion_url=result["discussion_url"],
+            author=None,
             created_at=created_at,
             tags=result["tags"]
         )
@@ -74,7 +74,7 @@ class Story(object):
             discussion_url=story_data["short_id_url"],
             story_url=story_data["url"],
             author=story_data["submitter_user"]["username"],
-            created_at=story_data["created_at"],
+            created_at=parse_date(story_data["created_at"]),
             tags=story_data["tags"]
         )
         return story

@@ -89,7 +89,7 @@ def main():
         for story in new_stories:
             tweet: str = None
             try:
-                tweet = TwitterStoryFormatter(story).format_string()
+                tweet = TwitterStoryFormatter().format_string(story)
                 bot.update_status(tweet)
                 logger.info(f"Tweeted: {tweet}")
             except ValueError:
