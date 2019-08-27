@@ -1,28 +1,39 @@
 import logging
+from datetime import date
 from os import getenv, path
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
-from story import Story, get_new_stories, StoryPublishConfig
+from story import Story, StoryFormatter, get_new_stories
 from storage import Storage
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
+import os
 
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
+TELEGRAM_PATTERN = """**{title}** - {author}  
+{tags}
 
+[link]({story_url}) | [discussione]({discussion_url})
+"""
 class TelegramStorage(Storage):
     file_path = "/storage/telegram_bot_storage"
 
-class DefaultTelegramPublishConfig(StoryPublishConfig):
+class TelegramStoryFormatter(StoryFormatter):
     def __init__(self):
-        super(DefaultTelegramPublishConfig, self).__init__(
-            len,
-            max_length=700)
+        
+        super(TelegramStoryFormatter, self).__init__(
+
+            pattern=TELEGRAM_PATTERN,
+            max_length=4096
+        )
+
+
 def get_latest_story(bot) -> Story:
     raise NotImplementedError()
 
@@ -41,15 +52,16 @@ def publish_news(context: CallbackContext):
     storage = TelegramStorage()
     latest= storage.load()
     if latest:
-        new_stories = get_new_stories(latest, json,DefaultTelegramPublishConfig())
+        new_stories = get_new_stories(latest, json)
     else:
-        new_stories = [Story.from_json_dict(json[0], DefaultTelegramPublishConfig())]
+        new_stories = [Story.from_json_dict(json[0])]
 
     if len(new_stories) == 0:
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            context.bot.send_message(chat_id=CHAT_ID, text=str(story))
+            text = TelegramStoryFormatter().format_string(story)
+            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="markdown")
         storage.save(new_stories[-1])
 
 def main():

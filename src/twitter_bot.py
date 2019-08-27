@@ -8,7 +8,7 @@ from requests import get
 from tweepy import OAuthHandler, API
 from twitter.twitter_utils import calc_expected_status_length
 
-from story import Story, get_new_stories, StoryPublishConfig
+from story import Story, get_new_stories, StoryFormatter
 
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,12 +32,15 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
-class DefaultTwitterPublishConfig(StoryPublishConfig):
-    def __init__(self):
+TWITTER_PATTERN = "{title} - Link: {story_url} Commenti: {discussion_url} {tags}"
 
-        super(DefaultTwitterPublishConfig, self).__init__(
-            partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),
-            max_length=MAX_TWEET_LENGTH)
+class TwitterStoryFormatter(StoryFormatter):
+    def __init__(self):
+        super(TwitterStoryFormatter, self).__init__(
+            pattern=TWITTER_PATTERN,
+            story_preview_length_func=partial(calc_expected_status_length, short_url_length=SHORT_URL_LENGTH),
+            max_length=MAX_TWEET_LENGTH
+        )
 
 def get_last_posted_tweet(bot: API) -> Story:
     """
@@ -59,7 +62,7 @@ def get_last_posted_tweet(bot: API) -> Story:
     # Injects UTC timezone into timestamp
     created_at = latest_tweet.created_at.replace(tzinfo=timezone.utc)
     # Parses tweet to retrieve required fields
-    story = Story.from_string(latest_tweet.full_text, created_at, DefaultTwitterPublishConfig())
+    story = Story.from_string(pattern=TWITTER_PATTERN, string=latest_tweet.full_text, created_at=created_at)
     # Returns story
     return story
 
@@ -75,10 +78,10 @@ def main():
     new_stories = []
     try:
         last_posted_tweet = get_last_posted_tweet(bot)
-        new_stories = get_new_stories(last_posted_tweet, json, DefaultTwitterPublishConfig())
+        new_stories = get_new_stories(last_posted_tweet, json)
     # If is not possible to retrieve last tweet gets only the latest story on the website
     except ValueError:
-        new_stories.append(Story.from_json_dict(json[0], DefaultTwitterPublishConfig()))
+        new_stories = [Story.from_json_dict(json[0])]
     # Tweets all the new stories
     if (len(new_stories) == 0):
         logger.info("Nothing new here, the bot is back to sleep.")
@@ -86,7 +89,7 @@ def main():
         for story in new_stories:
             tweet: str = None
             try:
-                tweet = str(story)
+                tweet = TwitterStoryFormatter().format_string(story)
                 bot.update_status(tweet)
                 logger.info(f"Tweeted: {tweet}")
             except ValueError:

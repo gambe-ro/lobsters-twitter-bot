@@ -1,78 +1,68 @@
 from datetime import date, datetime
-
+from dateutil.parser import parse as parse_date
 from parse import parse
-
-
-class StoryPublishConfig(object):
-
-    def __init__(self, story_preview_length_func=None, max_length=None,
-                 shortened_url_length = None):
-
-        self.max_length = max_length
-        self.story_preview_length_func= story_preview_length_func or len
-
 
 class Story(object):
     """
     Represents a Story as needed for posting on social networks.
 
-    :param title: Title of the story.  
-    :param url: URL of the resource in the website (not original post's link).  
+    :param title: Title of the story.
+    :param story_url: URL of the original post.  
+    :param discussion_url: URL of the resource in the website (not original post's link).  
     :param author: Username of the post's author.  
     :param created_at: String with creation time of the story.  
     :param tags: List of story tags.    
     """
 
-    PATTERN = "{title} - {url} ({author}) {tags}"
     MIN_TAGS_NUM = 3
     MIN_WORDS_NUM = 3
 
-    def __init__(self, title: str, url: str, author: str, created_at: date, tags: [str],
-                 publish_config: StoryPublishConfig):
+    def __init__(self, title: str, author: str, created_at: datetime, tags: [str], story_url: str, discussion_url: str):
         """
         Constructor of the object.
 
         :param title: Title of the story.
-        :param url: URL of the resource in the website (not original post's link).
-        :param author: Username of the post's author.
-        :param created_at: Creation time and date of the story
-        :param tags: List of story tags
+        :param story_url: URL of the original post.  
+        :param discussion_url: URL of the resource in the website (not original post's link).  
+        :param author: Username of the post's author.  
+        :param created_at: String with creation time of the story.  
+        :param tags: List of story tags.    
         """
         self.title = title
-        self.url = url
+        self.story_url = story_url
+        self.discussion_url = discussion_url
         self.author = author
         self.created_at = created_at
         self.tags = tags
-        self.publish_config = publish_config or StoryPublishConfig()
 
     @classmethod
-    def from_string(cls, string: str, created_at: date, publish_config: StoryPublishConfig):
+    def from_string(cls, pattern: str, string: str, created_at: datetime):
         """
         Deserializes the string to create a Story object.
 
-        :param string: String with serialized fields as specified in PATTERN.
-        :param created_at: Creation's timestamp, not provided in the PATTERN string.
+        :param string: String with serialized fields as specified in pattern.
+        :param created_at: Creation's timestamp, not provided in the pattern string.
         :return: Story with the deserialized fields. If the string doesn't respects pattern, returns None.
         """
         # Parses string
-        result = parse(cls.PATTERN, string)
+        result = parse(pattern, string)
         # If the pattern is not recognized returns None
         if result is None:
             raise ValueError("Invalid story pattern, cannot create a Story")
         # Creates object
         story = Story(
             title=result["title"],
-            url=result["url"],
-            author=result["author"],
+            story_url=result["story_url"],
+            discussion_url=result["discussion_url"],
+            author=None,
             created_at=created_at,
-            tags=result["tags"],
-            publish_config=publish_config
+            tags=result["tags"]
         )
         # Returns story
         return story
 
     @classmethod
-    def from_json_dict(cls, story_data: dict, publish_config: StoryPublishConfig):
+    def from_json_dict(cls, story_data: dict):
         """
         Uses fields of a dict to build story.
 
@@ -81,11 +71,11 @@ class Story(object):
         """
         story = Story(
             title=story_data["title"],
-            url=story_data["short_id_url"],
+            discussion_url=story_data["short_id_url"],
+            story_url=story_data["url"],
             author=story_data["submitter_user"]["username"],
-            created_at=datetime.strptime(story_data["created_at"], "%Y-%m-%dT%H:%M:%S.%f%z"),
-            tags=story_data["tags"],
-            publish_config=publish_config
+            created_at=parse_date(story_data["created_at"]),
+            tags=story_data["tags"]
         )
         return story
 
@@ -97,55 +87,62 @@ class Story(object):
         # TODO: Find more efficient and elegant way to compare stories
         return self.created_at > story.created_at
 
-    def __str__(self) -> str:
+class StoryFormatter():
+
+    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3, story_preview_length_func = None):
+
+        self.pattern = pattern
+
+        
+        self.min_tags_number = min_tags_number
+        self.min_words_number = min_words_number
+        self.max_length = max_length
+        self.story_preview_length_func = story_preview_length_func or len
+
+    def format_string(self, story) -> str:
         """
-        Builds a string to be tweeted.
-
-        :return: String to be tweeted
+        Formats string to be posted.
         """
 
-
-        current_tags = self.tags
-        current_title_words= self.title.split(" ")
+        current_tags = story.tags
+        current_title_words = story.title.split(" ")
+        
         while True:
-            if self._estimate_story_length(current_tags, current_title_words) <= self.publish_config.max_length:
-                return self._fill_template(tags=current_tags, title_words=current_title_words)
+            if self._estimate_story_length(story, current_tags, current_title_words) <= self.max_length:
+                return self._fill_template(story, tags=current_tags, title_words=current_title_words)
 
-            if len(current_tags) > self.MIN_TAGS_NUM:
+            if len(current_tags) > self.min_tags_number:
                 current_tags = current_tags[:-1]
                 continue
 
-            if len(current_title_words) > self.MIN_WORDS_NUM:
+            if len(current_title_words) > self.min_words_number:
                 current_title_words = current_title_words[:-1]
                 continue
 
             raise ValueError("No Valid Tweet could be produced.")
 
+    def _estimate_story_length(self, story, tags, title_words):
+        string = self._fill_template(story, tags, title_words)
+        return self.story_preview_length_func(string)
 
-    def _estimate_story_length(self, tags, title_words):
-        string = self._fill_template(tags, title_words)
-        return self.publish_config.story_preview_length_func(string)
-
-    def _fill_template(self, tags=None, title_words=None):
+    def _fill_template(self, story, tags=None, title_words=None):
 
         hashtag_list = list(
-            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or self.tags))
+            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or story.tags))
 
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
 
         # Builds the base string
-        return self.PATTERN.format(
-            title=" ".join(title_words) if title_words else self.title,
-            author=self.author,
-            url=self.url,
+        return self.pattern.format(
+            title=" ".join(title_words) if title_words else story.title,
+            author=story.author,
+            discussion_url=story.discussion_url,
+            story_url = story.story_url,
             tags=hashtags
         )
 
-
-
-
-def get_new_stories(latest_story: Story, source_data: dict, publish_config: StoryPublishConfig) -> [Story]:
+def get_new_stories(latest_story: Story, source_data: dict) -> [Story]:
     """
     Gets the stories in the JSON dictionary published after story.
 
@@ -158,7 +155,7 @@ def get_new_stories(latest_story: Story, source_data: dict, publish_config: Stor
     stories = []
     for story_json in source_data:
         # Creates story from json
-        story = Story.from_json_dict(story_json, publish_config)
+        story = Story.from_json_dict(story_json)
         # Compares current story and last published story
         if story.is_newer_of(latest_story):
             stories.append(story)
