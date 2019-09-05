@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime, timezone
 from functools import partial
+from traceback import print_exc
 from os import getenv
 
 import schedule
 from requests import get
-from tweepy import OAuthHandler, API
+from tweepy import OAuthHandler, API, TweepError
 from twitter.twitter_utils import calc_expected_status_length
 
 from story import Story, get_new_stories, StoryFormatter
@@ -94,6 +95,8 @@ def main():
                 logger.info(f"Tweeted: {tweet}")
             except ValueError:
                 logger.critical("Unable to post tweet")
+            except TweepError:
+                print_exc()
 
 
 if __name__ == "__main__":
