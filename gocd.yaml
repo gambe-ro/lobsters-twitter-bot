@@ -1,0 +1,47 @@
+format_version: 3
+pipelines:
+  TwitterBot:
+    group: Gambero
+    label_template: ${COUNT}
+    lock_behavior: unlockWhenFinished
+    materials:
+      git:
+        git: https://github.com/gambe-ro/lobsters-twitter-bot
+        shallow_clone: false
+        auto_update: true
+        branch: master
+    stages:
+    - Build:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+        jobs:
+          DCBuild:
+            timeout: 0
+            tasks:
+            - exec:
+                arguments:
+                - -c
+                - cp -v /vagrant/twitter.env .env && docker-compose build
+                command: bash
+                run_if: passed
+    - Restart:
+        fetch_materials: true
+        keep_artifacts: false
+        clean_workspace: false
+        approval:
+          type: success
+        jobs:
+          DCRestart:
+            timeout: 0
+            tasks:
+            - exec:
+                arguments:
+                - -c
+                - cp -v /vagrant/twitter.env .env && docker-compose down && docker-compose
+                  up -d
+                command: bash
+                run_if: passed
+
