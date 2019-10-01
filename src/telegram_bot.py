@@ -1,6 +1,5 @@
 import logging
 from datetime import date
-from html import escape
 from os import getenv, path
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
@@ -11,17 +10,16 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 import os
-from markdown import markdown
 
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
 FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
 CHAT_ID = getenv("CHAT_ID")
-TELEGRAM_PATTERN = """{title} - <strong>{author}</strong>  
-<a href="{story_url}">link</a> | <a href="{discussion_url}">discussione</a>
-
+TELEGRAM_PATTERN = """**{title}** - {author}  
 {tags}
+
+[link]({story_url}) | [discussione]({discussion_url})
 """
 class TelegramStorage(Storage):
     file_path = "/storage/telegram_bot_storage"
@@ -32,8 +30,7 @@ class TelegramStoryFormatter(StoryFormatter):
         super(TelegramStoryFormatter, self).__init__(
 
             pattern=TELEGRAM_PATTERN,
-            max_length=4096,
-            sanitize_function = escape
+            max_length=4096
         )
 
 
@@ -63,8 +60,8 @@ def publish_news(context: CallbackContext):
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            text =TelegramStoryFormatter().format_string(story)
-            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="html")
+            text = TelegramStoryFormatter().format_string(story)
+            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="markdown")
         storage.save(new_stories[-1])
 
 def main():

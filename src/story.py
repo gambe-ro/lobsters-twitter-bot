@@ -89,8 +89,7 @@ class Story(object):
 
 class StoryFormatter():
 
-    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3,
-                 story_preview_length_func = None, sanitize_function = lambda x:x):
+    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3, story_preview_length_func = None):
 
         self.pattern = pattern
 
@@ -99,7 +98,6 @@ class StoryFormatter():
         self.min_words_number = min_words_number
         self.max_length = max_length
         self.story_preview_length_func = story_preview_length_func or len
-        self.sanitize_function =sanitize_function
 
     def format_string(self, story) -> str:
         """
@@ -130,15 +128,15 @@ class StoryFormatter():
     def _fill_template(self, story, tags=None, title_words=None):
 
         hashtag_list = list(
-            map(lambda tag: f"#{self.sanitize_function(tag)}" if tag[0] != '#' else tag, tags or story.tags))
+            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or story.tags))
 
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
 
         # Builds the base string
         return self.pattern.format(
-            title=self.sanitize_function(" ".join(title_words)) if title_words else story.title,
-            author=self.sanitize_function(story.author),
+            title=" ".join(title_words) if title_words else story.title,
+            author=story.author,
             discussion_url=story.discussion_url,
             story_url = story.story_url,
             tags=hashtags
