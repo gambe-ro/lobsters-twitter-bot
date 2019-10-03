@@ -11,7 +11,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 import os
-from markdown import markdown
 import traceback
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
