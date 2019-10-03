@@ -12,7 +12,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 import os
 from markdown import markdown
-
+import traceback
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
@@ -64,7 +64,11 @@ def publish_news(context: CallbackContext):
     else:
         for story in new_stories:
             text =TelegramStoryFormatter().format_string(story)
-            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="html")
+            try:
+                context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="html")
+            except Exception:
+                logging.getLogger(__name__).error(f"Failed connection for story: {story}\n"
+                                                  f"Caused by:\n{traceback.format_exc()}")
         storage.save(new_stories[-1])
 
 def main():
