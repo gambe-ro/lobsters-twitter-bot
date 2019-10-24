@@ -138,7 +138,7 @@ class StoryFormatter():
         # Builds the base string
         return self.pattern.format(
             title=self.sanitize_function(" ".join(title_words)) if title_words else story.title,
-            author=story.sanitize_function(story.author),
+            author=self.sanitize_function(story.author),
             discussion_url=story.discussion_url,
             story_url = story.story_url,
             tags=hashtags

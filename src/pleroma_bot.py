@@ -12,10 +12,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 SECRET_STORAGE="/storage/pleroma.secret"
 
-PLEROMA_PATTERN = """**{title}** - {author}  
+PLEROMA_PATTERN = """{title} - {author}  
 {tags}
 
-[link]({story_url}) | [discussione]({discussion_url})
+Link: {story_url}
+Discussione: {discussion_url}
 """
 class PleromaStoryFormatter(StoryFormatter):
     def __init__(self):
@@ -43,10 +44,12 @@ def login():
 
 def main():
     pleroma = login()
+    logger.debug("Logged in")
     schedule.every(FETCH_INTERVAL).minutes.do(main)
     response = get(JSON_URL)
     json = response.json()
 
+    logger.debug("Downloaded stories")
     storage = PleromaStorage()
     latest= storage.load()
     if latest:
@@ -59,7 +62,7 @@ def main():
     else:
         for story in new_stories:
             text = PleromaStoryFormatter().format_string(story)
-            pleroma.status_post(status=text,content_type="text/markdown")
+            pleroma.status_post(status=text,content_type="text/html")
 
         storage.save(new_stories[-1])
 if __name__ == '__main__':
