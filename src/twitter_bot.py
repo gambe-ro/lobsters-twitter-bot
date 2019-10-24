@@ -1,15 +1,16 @@
 import logging
 from datetime import datetime, timezone
 from functools import partial
+from traceback import print_exc
 from os import getenv
 
 import schedule
 from requests import get
-from tweepy import OAuthHandler, API
+from tweepy import OAuthHandler, API, TweepError
 from twitter.twitter_utils import calc_expected_status_length
 
 from story import Story, get_new_stories, StoryFormatter
-from config import *
+
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 					 level=logging.INFO)
@@ -18,6 +19,15 @@ logger = logging.getLogger(__name__)
 MAX_TWEET_LENGTH = 280
 SHORT_URL_LENGTH = 23
 
+# Picks bot parameters from environment
+CONSUMER_KEY = getenv("CONSUMER_KEY")
+CONSUMER_SECRET = getenv("CONSUMER_SECRET")
+ACCESS_TOKEN = getenv("ACCESS_TOKEN")
+ACCESS_SECRET = getenv("ACCESS_SECRET")
+
+JSON_URL = getenv("JSON_URL")
+
+FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 
 # Authenticates to Twitter
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
@@ -80,11 +90,13 @@ def main():
         for story in new_stories:
             tweet: str = None
             try:
-                tweet = TwitterStoryFormatter(story).format_string()
+                tweet = TwitterStoryFormatter().format_string(story)
                 bot.update_status(tweet)
                 logger.info(f"Tweeted: {tweet}")
             except ValueError:
                 logger.critical("Unable to post tweet")
+            except TweepError:
+                print_exc()
 
 
 if __name__ == "__main__":

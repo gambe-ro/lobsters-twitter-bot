@@ -1,5 +1,5 @@
 from datetime import date, datetime
-
+from dateutil.parser import parse as parse_date
 from parse import parse
 
 class Story(object):
@@ -7,8 +7,8 @@ class Story(object):
     Represents a Story as needed for posting on social networks.
 
     :param title: Title of the story.
-    :param story_url: URL of the original post.  
-    :param discussion_url: URL of the resource in the website (not original post's link).  
+    :param story_url: URL of the original post.
+    :param discussion_url: URL of the resource in the website (not original post's link).
     :param author: Username of the post's author.  
     :param created_at: String with creation time of the story.  
     :param tags: List of story tags.    
@@ -22,11 +22,11 @@ class Story(object):
         Constructor of the object.
 
         :param title: Title of the story.
-        :param story_url: URL of the original post.  
-        :param discussion_url: URL of the resource in the website (not original post's link).  
-        :param author: Username of the post's author.  
-        :param created_at: String with creation time of the story.  
-        :param tags: List of story tags.    
+        :param story_url: URL of the original post.
+        :param discussion_url: URL of the resource in the website (not original post's link).
+        :param author: Username of the post's author.
+        :param created_at: String with creation time of the story.
+        :param tags: List of story tags.
         """
         self.title = title
         self.story_url = story_url
@@ -52,9 +52,9 @@ class Story(object):
         # Creates object
         story = Story(
             title=result["title"],
-            story_url=result["short_url"],
-            discussion_url=result["url"],
-            author=result["author"],
+            story_url=result["story_url"],
+            discussion_url=result["discussion_url"],
+            author=None,
             created_at=created_at,
             tags=result["tags"]
         )
@@ -74,7 +74,7 @@ class Story(object):
             discussion_url=story_data["short_id_url"],
             story_url=story_data["url"],
             author=story_data["submitter_user"]["username"],
-            created_at=story_data["created_at"],
+            created_at=parse_date(story_data["created_at"]),
             tags=story_data["tags"]
         )
         return story
@@ -89,15 +89,17 @@ class Story(object):
 
 class StoryFormatter():
 
-    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3, story_preview_length_func = None):
+    def __init__(self, pattern: str, max_length: int, min_tags_number: int = 1, min_words_number: int = 3,
+                 story_preview_length_func = None, sanitize_function = lambda x:x):
 
         self.pattern = pattern
 
-        
+
         self.min_tags_number = min_tags_number
         self.min_words_number = min_words_number
         self.max_length = max_length
         self.story_preview_length_func = story_preview_length_func or len
+        self.sanitize_function =sanitize_function
 
     def format_string(self, story) -> str:
         """
@@ -106,7 +108,7 @@ class StoryFormatter():
 
         current_tags = story.tags
         current_title_words = story.title.split(" ")
-        
+
         while True:
             if self._estimate_story_length(story, current_tags, current_title_words) <= self.max_length:
                 return self._fill_template(story, tags=current_tags, title_words=current_title_words)
@@ -128,15 +130,15 @@ class StoryFormatter():
     def _fill_template(self, story, tags=None, title_words=None):
 
         hashtag_list = list(
-            map(lambda tag: f"#{tag}" if tag[0] != '#' else tag, tags or story.tags))
+            map(lambda tag: f"#{self.sanitize_function(tag)}" if tag[0] != '#' else tag, tags or story.tags))
 
         # Joins hashtags as list
         hashtags = " ".join(hashtag_list)
 
         # Builds the base string
         return self.pattern.format(
-            title=" ".join(title_words) if title_words else story.title,
-            author=story.author,
+            title=self.sanitize_function(" ".join(title_words)) if title_words else story.title,
+            author=story.sanitize_function(story.author),
             discussion_url=story.discussion_url,
             story_url = story.story_url,
             tags=hashtags

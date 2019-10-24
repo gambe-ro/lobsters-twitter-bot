@@ -1,5 +1,7 @@
 import logging
-from config import *
+from datetime import date
+from html import escape
+from os import getenv, path
 from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from story import Story, StoryFormatter, get_new_stories
@@ -9,11 +11,16 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 import os
+import traceback
+# fetching env variables
+TOKEN = getenv("TELEGRAM_TOKEN")
+JSON_URL = getenv("JSON_URL")
+FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", 15))  # in minutes
+CHAT_ID = getenv("CHAT_ID")
+TELEGRAM_PATTERN = """{title} - <strong>{author}</strong>  
+<a href="{story_url}">link</a> | <a href="{discussion_url}">discussione</a>
 
-TELEGRAM_PATTERN = """**{title}** - {author}  
 {tags}
-
-[link]({story_url}) | [discussione]({discussion_url})
 """
 class TelegramStorage(Storage):
     file_path = "/storage/telegram_bot_storage"
@@ -24,7 +31,8 @@ class TelegramStoryFormatter(StoryFormatter):
         super(TelegramStoryFormatter, self).__init__(
 
             pattern=TELEGRAM_PATTERN,
-            max_length=4096
+            max_length=4096,
+            sanitize_function = escape
         )
 
 
@@ -54,8 +62,12 @@ def publish_news(context: CallbackContext):
         logger.info("No new stories found since last check")
     else:
         for story in new_stories:
-            text = TelegramStoryFormatter().format_string(story)
-            context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="markdown")
+            text =TelegramStoryFormatter().format_string(story)
+            try:
+                context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="html")
+            except Exception:
+                logging.getLogger(__name__).error(f"Failed connection for story: {story}\n"
+                                                  f"Caused by:\n{traceback.format_exc()}")
         storage.save(new_stories[-1])
 
 def main():
