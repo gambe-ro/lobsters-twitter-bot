@@ -7,8 +7,8 @@ class Story(object):
     Represents a Story as needed for posting on social networks.
 
     :param title: Title of the story.
-    :param story_url: URL of the original post.  
-    :param discussion_url: URL of the resource in the website (not original post's link).  
+    :param story_url: URL of the original post.
+    :param discussion_url: URL of the resource in the website (not original post's link).
     :param author: Username of the post's author.  
     :param created_at: String with creation time of the story.  
     :param tags: List of story tags.    
@@ -22,11 +22,11 @@ class Story(object):
         Constructor of the object.
 
         :param title: Title of the story.
-        :param story_url: URL of the original post.  
-        :param discussion_url: URL of the resource in the website (not original post's link).  
-        :param author: Username of the post's author.  
-        :param created_at: String with creation time of the story.  
-        :param tags: List of story tags.    
+        :param story_url: URL of the original post.
+        :param discussion_url: URL of the resource in the website (not original post's link).
+        :param author: Username of the post's author.
+        :param created_at: String with creation time of the story.
+        :param tags: List of story tags.
         """
         self.title = title
         self.story_url = story_url
@@ -94,7 +94,7 @@ class StoryFormatter():
 
         self.pattern = pattern
 
-        
+
         self.min_tags_number = min_tags_number
         self.min_words_number = min_words_number
         self.max_length = max_length
@@ -108,7 +108,7 @@ class StoryFormatter():
 
         current_tags = story.tags
         current_title_words = story.title.split(" ")
-        
+
         while True:
             if self._estimate_story_length(story, current_tags, current_title_words) <= self.max_length:
                 return self._fill_template(story, tags=current_tags, title_words=current_title_words)
