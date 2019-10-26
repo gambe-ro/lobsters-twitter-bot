@@ -16,7 +16,7 @@ services:
   telegram:
     build: .
     volumes:
-      - ./storage:/storage
+      - /data/bots:/storage
     environment:
       - JSON_URL
       - TELEGRAM_TOKEN
@@ -28,7 +28,7 @@ services:
       - ./telegram_bot.py
   pleroma :
       volumes:
-        - ./storage:/storage
+        - /data/bots:/storage
       build: .
       environment:
         - JSON_URL
