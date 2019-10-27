@@ -6,11 +6,12 @@ from requests import get
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from story import Story, StoryFormatter, get_new_stories
 from storage import Storage
+from logging.config import fileConfig
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
-import os
+import os.path
 import traceback
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
@@ -86,4 +87,6 @@ def main():
 
 
 if __name__ == "__main__":
+    if os.path.isfile("logging.conf"):
+        fileConfig("logging.conf")
     main()
