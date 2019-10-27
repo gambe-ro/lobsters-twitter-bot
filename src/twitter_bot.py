@@ -10,6 +10,9 @@ from tweepy import OAuthHandler, API, TweepError
 from twitter.twitter_utils import calc_expected_status_length
 
 from story import Story, get_new_stories, StoryFormatter
+from logging.config import fileConfig
+import os.path
+from config import LOGGING_CONF_FILE
 
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -100,6 +103,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if os.path.isfile(LOGGING_CONF_FILE):
+        fileConfig(LOGGING_CONF_FILE)
     main()
     schedule.every(FETCH_INTERVAL).minutes.do(main)
     while (True):

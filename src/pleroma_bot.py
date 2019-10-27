@@ -5,6 +5,9 @@ from mastodon import Mastodon
 from requests import get
 from config import *
 import schedule
+from mastodon import MastodonError
+from logging.config import fileConfig
+import os.path
 
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -43,7 +46,15 @@ def login():
     return pleroma
 
 def main():
-    pleroma = login()
+    try:
+        pleroma = login()
+    except MastodonError as e:
+        logger.error(e)
+        return
+    except KeyError as e:
+        logger.error(e)
+        return
+
     logger.debug("Logged in")
     schedule.every(FETCH_INTERVAL).minutes.do(main)
     response = get(JSON_URL)
@@ -66,7 +77,10 @@ def main():
 
         storage.save(new_stories[-1])
 if __name__ == '__main__':
+    if os.path.isfile(LOGGING_CONF_FILE):
+        fileConfig(LOGGING_CONF_FILE)
     main()
     schedule.every(FETCH_INTERVAL).minutes.do(main)
+
     while (True):
         schedule.run_pending()
