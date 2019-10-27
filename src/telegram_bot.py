@@ -13,6 +13,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 import os.path
 import traceback
+from config import LOGGING_CONF_FILE
 # fetching env variables
 TOKEN = getenv("TELEGRAM_TOKEN")
 JSON_URL = getenv("JSON_URL")
@@ -87,6 +88,6 @@ def main():
 
 
 if __name__ == "__main__":
-    if os.path.isfile("logging.conf"):
-        fileConfig("logging.conf")
+    if os.path.isfile(LOGGING_CONF_FILE):
+        fileConfig(LOGGING_CONF_FILE)
     main()

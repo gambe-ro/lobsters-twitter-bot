@@ -77,8 +77,8 @@ def main():
 
         storage.save(new_stories[-1])
 if __name__ == '__main__':
-    if os.path.isfile("logging.conf"):
-        fileConfig("logging.conf")
+    if os.path.isfile(LOGGING_CONF_FILE):
+        fileConfig(LOGGING_CONF_FILE)
     main()
     schedule.every(FETCH_INTERVAL).minutes.do(main)
 
