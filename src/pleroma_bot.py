@@ -48,11 +48,11 @@ def login():
 def main():
     try:
         pleroma = login()
-    except MastodonError as e:
-        logger.error(e)
+    except MastodonError:
+        logger.error("login failed" exc_info=True)
         return
-    except KeyError as e:
-        logger.error(e)
+    except KeyError:
+        logger.error("login failed", exc_info=True)
         return
 
     logger.debug("Logged in")
