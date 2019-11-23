@@ -36,7 +36,7 @@ FETCH_INTERVAL = int(getenv("FETCH_INTERVAL", default=15))
 auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
-TWITTER_PATTERN = "{title} - Link: {story_url} Commenti: {discussion_url} {tags}"
+TWITTER_PATTERN = "{title}\nLink: {story_url}\nCommenti: {discussion_url}\n{tags}"
 
 class TwitterStoryFormatter(StoryFormatter):
     def __init__(self):
@@ -50,7 +50,7 @@ def get_last_posted_tweet(bot: API) -> Story:
     """
     Gets the last tweet posted and parses it.
 
-    :param bot: Twitter bot to fetch the tweet from.  
+    :param bot: Twitter bot to fetch the tweet from.
     :return: Story parsed from the latest tweet posted.
     """
     # Gets its own Twitter ID
