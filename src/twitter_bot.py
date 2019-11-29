@@ -75,8 +75,12 @@ def main():
     bot = API(auth)
     logger.info("Checking for new posts...")
     # Fetches website to get new stories in JSON
-    response = get(JSON_URL)
-    json = response.json()
+    try:
+        response = get(JSON_URL)
+        json = response.json()
+    except Exception as e:
+        logger.error("Failed to connect to gambe.ro. Skipping.")
+        return
     # Fetches Twitter for the last published stories
     last_posted_tweet = None
     new_stories = []
