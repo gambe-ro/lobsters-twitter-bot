@@ -50,8 +50,12 @@ def error(update, context):
 
 
 def publish_news(context: CallbackContext):
-    response = get(JSON_URL)
-    json = response.json()
+    try:
+        response = get(JSON_URL)
+        json = response.json()
+    except Exception as e:
+        logger.error("Failed to connect to gambe.ro. Skipping.")
+        return
 
     storage = TelegramStorage()
     latest= storage.load()

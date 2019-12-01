@@ -56,10 +56,13 @@ def main():
         return
 
     logger.debug("Logged in")
-    schedule.every(FETCH_INTERVAL).minutes.do(main)
-    response = get(JSON_URL)
-    json = response.json()
-
+    try:
+        response = get(JSON_URL)
+        json = response.json()
+    except Exception as e:
+        logger.error("Failed to connect to gambe.ro. Skipping.")
+        return
+    
     logger.debug("Downloaded stories")
     storage = PleromaStorage()
     latest= storage.load()
