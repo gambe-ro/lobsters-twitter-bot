@@ -23,7 +23,7 @@ Discussione: {discussion_url}
 def login()->LinkedInApplication:
     if not LINKEDIN_TOKEN:
         auth = LinkedInAuthentication(LINKEDIN_KEY, LINKEDIN_SECRET, 'http://localhost:8000/',
-                                      ["w_share"])
+                                      ['r_emailaddress','r_liteprofile','w_member_social'])
         print(auth.authorization_url)
         authorization_code = input("Please insert authorization_code")
         auth.authorization_code = authorization_code
@@ -87,11 +87,10 @@ def main():
         for story in new_stories:
             response = application.make_request(method="POST",
                                      url="https://api.linkedin.com/v2/shares",
-                                     data= make_linkedin_request(story)
+                                     data=make_linkedin_request(story)
                                      )
             logger.debug(response.status_code)
             logger.debug(response.content)
-            print(response.content)
         storage.save(new_stories[-1])
 
 if __name__ == '__main__':
