@@ -42,4 +42,4 @@ wcwidth==0.1.7
 wrapt==1.11.2
 zipp==0.5.2
 Mastodon.py==1.4.6
-
+python-linkedin-v2
