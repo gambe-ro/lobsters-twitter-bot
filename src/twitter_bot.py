@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from functools import partial
 from traceback import print_exc
 from os import getenv
-
+import time
 import schedule
 from requests import get
 from tweepy import OAuthHandler, API, TweepError
@@ -113,3 +113,4 @@ if __name__ == "__main__":
     schedule.every(FETCH_INTERVAL).minutes.do(main)
     while (True):
         schedule.run_pending()
+        time.sleep(1000)

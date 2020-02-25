@@ -1,6 +1,7 @@
 from story import Story, StoryFormatter, get_new_stories
 from storage import Storage
 import logging
+import time
 from mastodon import Mastodon
 from requests import get
 from config import *
@@ -87,3 +88,4 @@ if __name__ == '__main__':
 
     while (True):
         schedule.run_pending()
+        time.sleep(1000)
