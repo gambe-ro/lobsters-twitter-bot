@@ -7,6 +7,12 @@ from telegram.ext import Updater, CommandHandler, CallbackContext
 from story import Story, StoryFormatter, get_new_stories
 from storage import Storage
 from logging.config import fileConfig
+from os import environ
+import sentry_sdk
+
+if 'SENTRY_URL' in environ:
+    sentry_sdk.init(environ["SENTRY_URL"])
+
 #  enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)

@@ -13,6 +13,11 @@ from story import Story, get_new_stories, StoryFormatter
 from logging.config import fileConfig
 import os.path
 from config import LOGGING_CONF_FILE
+from os import environ
+import sentry_sdk
+
+if 'SENTRY_URL' in environ:
+    sentry_sdk.init(environ["SENTRY_URL"])
 
 # enables and get logger
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
